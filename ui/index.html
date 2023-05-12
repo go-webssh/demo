@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> go-webssh demo</title>
+    <link href="/static/css/xterm.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+
+<div id="terms"></div>
+</body>
+
+<script src="static/js/xterm.js"></script>
+<script type="module">
+
+    const socket = new WebSocket('ws://localhost:8080/ws?cols=180&rows=38');
+
+    const term = new Terminal({
+        lineHeight: 1.2,
+        fontSize: 12,
+        fontFamily: "Monaco, Menlo, Consolas, 'Courier New', monospace",
+        cursorBlink: true,
+        cursorStyle: 'underline',
+        tabStopWidth: 4,
+        cols:180,
+        rows:38,
+    });
+    term.open(document.getElementById('terms'),true);
+    term.onData(function (msg) {
+        socket.send(JSON.stringify({ type: "cmd", cmd:msg}))
+    })
+
+    socket.onopen = function () {
+        socket.send(JSON.stringify({ type: "cmd",cmd:""}))
+    };
+    socket.onmessage = function (msg) {
+        term.write(msg.data);
+    };
+    socket.onerror = function (e) {
+        console.log(e);
+    };
+
+    socket.onclose = function (e) {
+        console.log(e);
+        term.destroy(200);
+    };
+
+    // 监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function() {
+        socket.close(1000,"refresh");
+    }
+    // 内容全屏显示-窗口大小发生改变时
+    function resizeScreen(size) {
+        console.log("size", size);
+        try {
+            // 窗口大小改变时触发xterm的resize方法，向后端发送行列数，格式由后端决定
+            term.onResize(size => {
+                socket.send(JSON.stringify({ type: "resize", cols: size.cols, rows: size.rows }));
+            });
+        } catch (e) {
+            console.log("e", e.message);
+        }
+    }
+    window.addEventListener("resize", resizeScreen);
+
+</script>
+
+</html>
