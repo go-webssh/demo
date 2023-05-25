@@ -21,6 +21,11 @@
 ```bash
 docker run -d -p 222:22 --rm bimg/alpine-ssh
 ```
-项目地址：https://github.com/basicimage/alpine-ssh
+ssh-server项目地址：https://github.com/basicimage/alpine-ssh
+## 运行
+```bash
+go run main.go
+```
+打开 http://localhost:8080 即可查看效果
 ## 效果
 ![效果](docs/images/demo.png)
